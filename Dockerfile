@@ -1,6 +1,8 @@
 ARG PYTHON_VERSION=3.11
 
-FROM python:${PYTHON_VERSION}-slim
+# The 'slim' is smaller version, 'bookworm' is Debian 12.  We could just use 'slim', but we should
+# be explicit about any change to the OS version.
+FROM python:${PYTHON_VERSION}-slim-bookworm
 
 RUN pip install --upgrade pip && \
     pip install jupyterlab torch torchvision torchaudio
