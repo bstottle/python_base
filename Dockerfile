@@ -11,8 +11,10 @@ RUN pip install --upgrade pip && \
 # https://stackoverflow.com/a/75552789
 RUN jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
 
+RUN mkdir /app
+
 ENTRYPOINT [ "jupyter", "lab", \
-             "/tmp", \
+             "/app", \
              "--IdentityProvider.token=''", \
              "--ip", "0.0.0.0", \
              "--port", "8888", \
