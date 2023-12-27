@@ -2,7 +2,8 @@ ARG PYTHON_VERSION=3.11
 
 FROM python:${PYTHON_VERSION}-slim
 
-RUN pip install jupyterlab
+RUN pip install --upgrade pip && \
+    pip install jupyterlab torch torchvision torchaudio
 
 # Don't ask about Jupyter news
 # https://stackoverflow.com/a/75552789
