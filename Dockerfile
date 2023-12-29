@@ -4,10 +4,8 @@ ARG PYTHON_VERSION=3.11
 # be explicit about any change to the OS version.
 FROM python:${PYTHON_VERSION}-bookworm as builder
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-RUN pip install --upgrade pip
+ENV PYTHONDONTWRITEBYTECODE 1 \
+    PYTHONUNBUFFERED 1
 
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y wget gnupg software-properties-common && \
@@ -35,11 +33,15 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 ARG CMAKE_ARGS="-DLLAMA_CUBLAS=on"
 ARG FORCE_CMAKE=1
-RUN --mount=type=cache,target=/root/.cache/pip pip install torch torchvision torchaudio \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
+    pip install torch torchvision torchaudio \
     ctransformers[cuda] langchain gradio cmake ninja llama-cpp-python hf_transfer
 
 # final image
 FROM python:${PYTHON_VERSION}-slim-bookworm
+
+ENV NVIDIA_DRIVER_CAPABILITIES="all"
 
 COPY entrypoint.sh /entrypoint.sh
 
@@ -67,10 +69,11 @@ RUN python -m venv /app/venv && \
     NV_LD_PATHS=$(echo "import os; print(':'.join(sorted({path+'/lib' for path, dirs, _ in os.walk('$base_site_packages/nvidia') if 'lib' in dirs})))" | python) && \
     echo $NV_LD_PATHS > /opt/app/nv_lib_dirs.conf
 
-ENV PATH="/app/venv/bin:$PATH"
+ENV PATH="/app/venv/bin:/opt/venv/bin:$PATH" \
+    HF_HUB_CACHE="/app/data/.hub_cache"
 
 RUN --mount=type=cache,target=~/.cache/pip \
-    pip install --no-cache jupyterlab
+    pip install --no-cache jupyterlab ipywidgets
 
 # Don't ask about Jupyter news
 # https://stackoverflow.com/a/75552789
@@ -79,9 +82,9 @@ RUN jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
 ENTRYPOINT ["/entrypoint.sh"]
 
 CMD [ "jupyter", "lab", \
-             "/app", \
-             "--IdentityProvider.token=''", \
-             "--ip", "0.0.0.0", \
-             "--port", "8888", \
-             "--no-browser" \
-           ]
+      "/app", \
+      "--IdentityProvider.token=''", \
+      "--ip", "0.0.0.0", \
+      "--port", "8888", \
+      "--no-browser" \
+    ]
