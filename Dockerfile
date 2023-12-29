@@ -9,7 +9,8 @@ ENV PYTHONUNBUFFERED 1
 
 RUN pip install --upgrade pip
 
-RUN apt-get update && apt-get install -y wget gnupg software-properties-common && \
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y wget gnupg software-properties-common && \
     #################### NVIDIA ####################
     # We are getting pytorch for CUDA 12.1, while the debian 12 repo only has CUDA 12.3.
     # Install necessary packages for adding repositories
@@ -68,7 +69,8 @@ RUN python -m venv /app/venv && \
 
 ENV PATH="/app/venv/bin:$PATH"
 
-RUN pip install --no-cache jupyterlab
+RUN --mount=type=cache,target=~/.cache/pip \
+    pip install --no-cache jupyterlab
 
 # Don't ask about Jupyter news
 # https://stackoverflow.com/a/75552789
