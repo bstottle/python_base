@@ -16,7 +16,11 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install torch torchvision tor
 # final image
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-RUN addgroup --system app && adduser --system --home /home/app --group app
+COPY entrypoint.sh /entrypoint.sh
+
+RUN addgroup --system app && adduser --system --home /home/app --group app && \
+    mkdir /opt/app && chown app:app /opt/app && chmod 755 /opt/app && \
+    chmod +x /entrypoint.sh
 
 USER app
 
@@ -43,7 +47,9 @@ RUN pip install --no-cache jupyterlab
 # https://stackoverflow.com/a/75552789
 RUN jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
 
-ENTRYPOINT [ "jupyter", "lab", \
+ENTRYPOINT ["/entrypoint.sh"]
+
+CMD [ "jupyter", "lab", \
              "/app", \
              "--IdentityProvider.token=''", \
              "--ip", "0.0.0.0", \
