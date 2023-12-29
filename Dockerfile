@@ -32,7 +32,10 @@ ENV PATH=/usr/local/cuda/bin:${PATH} \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-RUN --mount=type=cache,target=/root/.cache/pip pip install torch torchvision torchaudio
+ARG CMAKE_ARGS="-DLLAMA_CUBLAS=on"
+ARG FORCE_CMAKE=1
+RUN --mount=type=cache,target=/root/.cache/pip pip install torch torchvision torchaudio \
+    ctransformers[cuda] langchain gradio cmake ninja llama-cpp-python hf_transfer
 
 # final image
 FROM python:${PYTHON_VERSION}-slim-bookworm
