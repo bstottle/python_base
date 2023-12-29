@@ -8,6 +8,27 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 RUN pip install --upgrade pip
+
+RUN apt-get update && apt-get install -y wget gnupg software-properties-common && \
+    #################### NVIDIA ####################
+    # We are getting pytorch for CUDA 12.1, while the debian 12 repo only has CUDA 12.3.
+    # Install necessary packages for adding repositories
+    # Add NVIDIA package repositories
+    apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/3bf863cc.pub && \
+    echo "deb http://developer.download.nvidia.com/compute/cuda/repos/debian12/x86_64/ /" > /etc/apt/sources.list.d/cuda.list && \
+    # Add NVIDIA non-free/contrib
+    echo "deb http://deb.debian.org/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    apt-get update && \
+    # List available versions of CUDA (optional step for information)
+    apt-cache madison cuda && \
+    # Install CUDA
+    apt-get install -y cuda=12.3.1-1
+
+# Set environment variables
+ENV PATH=/usr/local/cuda/bin:${PATH} \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+#################### NVIDIA ####################
+
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
@@ -37,7 +58,10 @@ RUN python -m venv /app/venv && \
     # Make the derived virtual environment import base's packages too.
     base_site_packages="$(/opt/venv/bin/python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')" && \
     derived_site_packages="$(/app/venv/bin/python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')" && \
-    echo "$base_site_packages" > "$derived_site_packages"/root_packages.pth
+    echo "$base_site_packages" > "$derived_site_packages"/root_packages.pth && \
+    # Gather the locations for nvidia shared libs so we can add them to LD_LIBRARY_PATH
+    NV_LD_PATHS=$(echo "import os; print(':'.join(sorted({path+'/lib' for path, dirs, _ in os.walk('$base_site_packages/nvidia') if 'lib' in dirs})))" | python) && \
+    echo $NV_LD_PATHS > /opt/app/nv_lib_dirs.conf
 
 ENV PATH="/app/venv/bin:$PATH"
 
