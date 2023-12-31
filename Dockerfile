@@ -61,6 +61,7 @@ RUN addgroup --system app && adduser --system --home /home/app --group app && \
 USER app
 
 COPY --from=builder /opt/venv /opt/venv
+COPY --chown=app:app examples /examples
 
 WORKDIR /app
 COPY --chown=app:app jupyter_settings .jupyter
