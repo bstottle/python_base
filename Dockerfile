@@ -12,8 +12,11 @@ FROM python:${PYTHON_VERSION}-bookworm as builder
 ENV PYTHONDONTWRITEBYTECODE 1 \
     PYTHONUNBUFFERED 1
 
+COPY requirements_torch*.txt .
+COPY requirements_builder.txt .
+
 RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update && apt-get install -y wget gnupg software-properties-common && \
+    apt-get update && apt-get install -y wget gnupg software-properties-common cmake ninja-build && \
     #################### NVIDIA ####################
     # We are getting pytorch for CUDA 12.1, while the debian 12 repo only has CUDA 12.3.
     # Install necessary packages for adding repositories
@@ -40,11 +43,8 @@ ARG CMAKE_ARGS="-DLLAMA_CUBLAS=on"
 ARG FORCE_CMAKE=1
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
-    pip install torch torchvision torchaudio gradio cmake ninja \
-    # Chat specific modules
-    ctransformers[cuda] langchain llama-cpp-python hf_transfer \
-    # Image specific modules
-    diffusers transformers accelerate omegaconf invisible-watermark>=0.2.0
+    pip install -r requirements_torch_cu121.txt && \
+    pip install -r requirements_builder.txt
 
 ################################################
 # final image ##################################
@@ -54,6 +54,7 @@ FROM python:${PYTHON_VERSION}-slim-bookworm
 ENV NVIDIA_DRIVER_CAPABILITIES="all"
 
 COPY entrypoint.sh /entrypoint.sh
+COPY requirements_app.txt /requirements_app.txt
 
 RUN addgroup --system app && adduser --system --home /home/app --group app && \
     mkdir /opt/app && chown app:app /opt/app && chmod 755 /opt/app && \
@@ -88,7 +89,7 @@ ENV PATH="/app/venv/bin:/opt/venv/bin:$PATH" \
     SHELL=/bin/bash
 
 RUN --mount=type=cache,target=~/.cache/pip \
-    pip install --no-cache jupyterlab ipywidgets
+    pip install -r /requirements_app.txt 
 
 # Don't ask about Jupyter news
 # https://stackoverflow.com/a/75552789
