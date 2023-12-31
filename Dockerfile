@@ -70,7 +70,8 @@ RUN python -m venv /app/venv && \
     echo $NV_LD_PATHS > /opt/app/nv_lib_dirs.conf
 
 ENV PATH="/app/venv/bin:/opt/venv/bin:$PATH" \
-    HF_HUB_CACHE="/app/data/.hub_cache"
+    HF_HUB_CACHE="/app/data/.hub_cache" \
+    SHELL=/bin/bash
 
 RUN --mount=type=cache,target=~/.cache/pip \
     pip install --no-cache jupyterlab ipywidgets
