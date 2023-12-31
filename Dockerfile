@@ -63,6 +63,7 @@ USER app
 COPY --from=builder /opt/venv /opt/venv
 
 WORKDIR /app
+COPY --chown=app:app jupyter_settings .jupyter
 
 # Pip locations step #2 (to enable user install python packages in a volume)
 # We create a /app/venv directory with a 2nd venv in it.  This is the one available for exposing as
@@ -80,6 +81,7 @@ RUN python -m venv /app/venv && \
 
 ENV PATH="/app/venv/bin:/opt/venv/bin:$PATH" \
     HF_HUB_CACHE="/app/data/.hub_cache" \
+    JUPYTER_CONFIG_DIR="/app/.jupyter" \
     SHELL=/bin/bash
 
 RUN --mount=type=cache,target=~/.cache/pip \
