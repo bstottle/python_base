@@ -2,6 +2,9 @@ ARG PYTHON_VERSION=3.11
 
 # The 'slim' is smaller version, 'bookworm' is Debian 12.  We could just use 'slim', but we should
 # be explicit about any change to the OS version.
+################################################
+# builder image ################################
+################################################
 FROM python:${PYTHON_VERSION}-bookworm as builder
 
 ENV PYTHONDONTWRITEBYTECODE 1 \
@@ -35,10 +38,15 @@ ARG CMAKE_ARGS="-DLLAMA_CUBLAS=on"
 ARG FORCE_CMAKE=1
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
-    pip install torch torchvision torchaudio \
-    ctransformers[cuda] langchain gradio cmake ninja llama-cpp-python hf_transfer
+    pip install torch torchvision torchaudio gradio cmake ninja \
+    # Chat specific modules
+    ctransformers[cuda] langchain llama-cpp-python hf_transfer \
+    # Image specific modules
+    diffusers transformers accelerate omegaconf invisible-watermark>=0.2.0
 
-# final image
+################################################
+# final image ##################################
+################################################
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
 ENV NVIDIA_DRIVER_CAPABILITIES="all"
@@ -47,7 +55,8 @@ COPY entrypoint.sh /entrypoint.sh
 
 RUN addgroup --system app && adduser --system --home /home/app --group app && \
     mkdir /opt/app && chown app:app /opt/app && chmod 755 /opt/app && \
-    chmod +x /entrypoint.sh
+    chmod +x /entrypoint.sh && \
+    apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0
 
 USER app
 
