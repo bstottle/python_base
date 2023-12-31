@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.2
+
 ARG PYTHON_VERSION=3.11
 
 # The 'slim' is smaller version, 'bookworm' is Debian 12.  We could just use 'slim', but we should
