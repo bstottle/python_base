@@ -1,9 +1,10 @@
-# Common tools
-gradio
 # Chat specific modules
 langchain
 llama-cpp-python
 hf_transfer
+ctransformers[cuda] # This is what adds the nvidia shared libs into python, which we need
+bs4       # For RAGs
+chromadb  # For RAGs
 # Image specific modules
 diffusers
 transformers
